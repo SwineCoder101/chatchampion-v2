@@ -13,7 +13,7 @@ contract ChatChampion is ERC20, Ownable {
         Ownable(initialOwner)
     {
         for (uint256 i = 0; i < addresses.length; i++) {
-            airDrop(addresses[i]);
+            _mint(addresses[i], 1000 ether);
         }
     }
     function airDrop(address to) public onlyOwner {
