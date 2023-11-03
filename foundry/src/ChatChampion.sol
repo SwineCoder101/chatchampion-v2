@@ -5,21 +5,16 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract ChatChampion is ERC20, Ownable {
-    address[] public v1Addresses;
-    bool public v1AirDropEnded = false;
     bool public airDropEnded = false;
     uint256 private lastRewardTime = block.timestamp;
 
-    constructor(address initialOwner)
+    constructor(address initialOwner, address[] memory addresses)
         ERC20("ChatChampion", "CC")
         Ownable(initialOwner)
-    {}
-    function v1AirDrop(address[] memory addresses) public onlyOwner {
-        require(!v1AirDropEnded);
+    {
         for (uint256 i = 0; i < addresses.length; i++) {
             airDrop(addresses[i]);
         }
-        v1AirDropEnded = true;
     }
     function airDrop(address to) public onlyOwner {
         require(!airDropEnded);
@@ -28,7 +23,6 @@ contract ChatChampion is ERC20, Ownable {
     function endAirDrop() public onlyOwner {
         airDropEnded = true;
     }
-
     function rewardUsers(address user0, uint256 score0, address user1, uint256 score1, address user2, uint256 score2) public onlyOwner {
         // Rewards are 1000 tokens per hour
         uint256 reward = (block.timestamp - lastRewardTime) / 1 hours * 1000 ether;
