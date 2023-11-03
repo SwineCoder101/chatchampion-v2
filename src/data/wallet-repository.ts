@@ -28,7 +28,7 @@ class UserWallet {
     }
 }
 
-async function saveWallet(wallet: Wallet) : Promise<boolean>{
+async function saveWallet(wallet: UserWallet) : Promise<boolean>{
 
     const walletFound = await getWalletCollection().findOne({userId: wallet.getUserId()});
 
@@ -47,7 +47,7 @@ async function saveWallet(wallet: Wallet) : Promise<boolean>{
     return true;
 }
 
-async function updateWallet(wallet: Wallet) : Promise<boolean>{
+async function updateWallet(wallet: UserWallet) : Promise<boolean>{
     const walletFound = await getWalletCollection().findOne({userId: wallet.getUserId()});
 
     if(!walletFound) {
@@ -92,4 +92,4 @@ async function getWalletByUserId(userId) {
     });
 }
 
-export {Wallet, saveWallet, updateWallet, deleteWallet, getWalletByUserId};
+export {UserWallet, saveWallet, updateWallet, deleteWallet, getWalletByUserId};
