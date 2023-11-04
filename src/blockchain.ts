@@ -13,7 +13,6 @@ const tokenAbi = [
     "function transfer(address to, uint256 value) public returns (bool)",
     "function balanceOf(address owner) view returns (uint256)",
   ];
-
 const provider = new ethers.JsonRpcProvider(process.env.RPC);
 const deployerWallet = new ethers.Wallet(
   process.env.DEPLOYER_PRIVATE_KEY,
@@ -63,6 +62,14 @@ async function mintWallet(
     const receiptUrl = process.env.TX_EXPLORER + "/tx/" + tx.hash.toString();
 
     return receiptUrl;
+  }
+
+  export const getAddressFromSignature = (message: string, signature: string) => {
+    try{
+      return ethers.verifyMessage(signature,message);
+    }catch(error){
+        console.log(error);
+    }
   }
 
 

@@ -7,7 +7,9 @@ import { connectToMongo } from "./client/mongo-connnect";
 import  { Message,convertToMessageObject ,deleteAllMessages,saveMessage, getFormatedMessages } from "./data/message-repository";
 import { analyzeChat } from "./analysis"
 import path from 'path';
-import { reward } from "./blockchain";
+import cors from 'cors';
+import { get } from "http";
+import {getAddressFromSignature, reward} from "./blockchain";
 
 dotenv.config();
 
@@ -20,7 +22,34 @@ const webhookURL = `${SERVER_URL}${URI}`;
 const app = express();
 app.use(express.json());
 
+// Set up a whitelist and check against it:
+const whitelist = ['http://localhost:5173', SERVER_URL]; // Replace with your frontend's URL
+const corsOptions = {
+  origin: function (origin, callback) {
+    if (whitelist.indexOf(origin) !== -1 || !origin) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  }
+};
 
+app.options('*', cors(corsOptions));
+
+app.use(cors(corsOptions));
+
+
+app.post('/signWallet', async (req: Request, res: Response) => {
+    console.log('signing the wallet here....   ');
+    try{
+        const chunk = req.body;
+        const address = getAddressFromSignature(chunk.signature, chunk.message);
+        return res.status(200).send({isSignedIn: true, address: address});
+    }catch(error){
+        console.error(error);
+        return res.status(500).send({isSignedIn: false});
+    };
+});
 
 
 app.post(URI, async (req: Request, res: Response) => {
@@ -85,6 +114,8 @@ app.post(URI, async (req: Request, res: Response) => {
 const CONNECT_WALLET_HTML_PATH = "../connectWallet/dist";
 const CONNECT_WALLET_HTML = `${CONNECT_WALLET_HTML_PATH}/index.html`;
 
+
+
 app.use('/connectWallet', express.static(path.join(__dirname, "../connectWallet/dist")));
 
 
@@ -102,62 +133,3 @@ app.listen(PORT, async () => {
       console.error("Webhook setup failed:", error.message);
     }
   });
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-      //   if (matchForRedeem) {
-    //     const address = matchForRedeem[1];
-    //     let userWalletInfo = await queryDatabaseByUserId(userId + "A");
-    //     console.log(userWalletInfo);
-  
-    //     if (!userWalletInfo || !userWalletInfo.address) {
-    //       await sendMessage(
-    //         chatId,
-    //         "The following user does not have a wallet: " +
-    //           userWalletInfo.username
-    //       );
-    //     }
-  
-    //     if (!userWalletInfo || !userWalletInfo.address) {
-    //       await sendMessage(
-    //         chatId,
-    //         "The following user had already redeemed" +
-    //           userWalletInfo.username +
-    //           " to address: " +
-    //           userWalletInfo.address
-    //       );
-    //     }
-  
-    //     await sendMessage(
-    //       chatId,
-    //       "about to redeem tokens for " +
-    //         userWalletInfo.username +
-    //         " to address: " +
-    //         address
-    //     );
-  
-    //     const urlReciept = await redeemTokens(
-    //       userWalletInfo.username,
-    //       address,
-    //       userWalletInfo.key,
-    //       userWalletInfo.address
-    //     );
-  
-    //     // await deleteRowByUsername(userWalletInfo.username);
-    //     // await addToDatabase(userId + "A", userWalletInfo.username, '', address);
-  
-    //     const numberOftokens = await balanceOf(address);
-    //   }
-  
