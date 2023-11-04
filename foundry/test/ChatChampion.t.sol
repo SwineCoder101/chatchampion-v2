@@ -29,7 +29,6 @@ contract ChatChampionTest is Test {
         }
     }
 
-
     function testCannotAirDropAfterEnded() public {
         // End the airdrop
         chatChampion.endAirDrop();
@@ -39,34 +38,34 @@ contract ChatChampionTest is Test {
         chatChampion.airDrop(address(4));
     }
 
-   
     function testRewardDistribution() public {
-        // Define users and scores inline for easy editing
-        address user0 = address(0x1);
-        uint256 score0 = 10;
-        address user1 = address(0x2);
-        uint256 score1 = 20;
-        address user2 = address(0x3);
-        uint256 score2 = 30;
+        // Define an array of users and an array of scores
+        address[] memory users = new address[](3);
+        uint256[] memory scores = new uint256[](3);
+
+        users[0] = address(0x1);
+        scores[0] = 10;
+        users[1] = address(0x2);
+        scores[1] = 20;
+        users[2] = address(0x3);
+        scores[2] = 30;
 
         // Simulate time passing
         uint256 hoursPassed = 1;
         vm.warp(block.timestamp + (hoursPassed * 1 hours));
 
         // Execute the reward function
-        chatChampion.rewardUsers(user0, user1, user2, score0, score1, score2);
+        chatChampion.rewardUsers(users, scores);
 
         // Calculate total score and total reward
-        uint256 totalScore = score0 + score1 + score2;
+        uint256 totalScore = scores[0] + scores[1] + scores[2];
         uint256 totalReward = hoursPassed * 1000 ether;
 
         // Calculate and assert expected rewards for each user
-        assertEq(chatChampion.balanceOf(user0), (score0 * totalReward / totalScore));
-        emit log_uint(chatChampion.balanceOf(user0));
-        assertEq(chatChampion.balanceOf(user1), (score1 * totalReward / totalScore));
-        emit log_uint(chatChampion.balanceOf(user1));
-        assertEq(chatChampion.balanceOf(user2), (score2 * totalReward / totalScore));
-        emit log_uint(chatChampion.balanceOf(user2));
-
+        for (uint i = 0; i < users.length; i++) {
+            uint256 expectedReward = (scores[i] * totalReward / totalScore);
+            assertEq(chatChampion.balanceOf(users[i]), expectedReward);
+            emit log_uint(chatChampion.balanceOf(users[i]));
+        }
     }
 }

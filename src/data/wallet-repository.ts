@@ -88,7 +88,7 @@ async function getWalletByUserId(userId: string) : Promise<UserWallet>{
         const result = await getWalletCollection().findOne({ userId: userId });
         if (!result) {
             console.error("No user with the userId " + userId + " in the database.");
-            return new UserWallet(0, 0, 0);
+            return new UserWallet("", "", "");
         }
         return new UserWallet(result.userId, result.walletAddress, result.privateKey);
     } catch (err) {

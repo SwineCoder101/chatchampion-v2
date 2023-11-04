@@ -21,11 +21,12 @@ const openai = new OpenAI({
   Please provide the output in a JSON array with objects containing 'userid' and 'score' keys. 
   For example: 
   [
-    {"userid": "user123", "score": 8}, 
-    {"userid": "user456", "score": 7}, 
-    {"userid": "user789", "score": 5}
+    {"userid": "user1234567890", "score": 8}, 
+    {"userid": "user2345678901", "score": 7}, 
+    {"userid": "user3456789012", "score": 5}
   ]
-  Ensure that the 'userid' corresponds to the unique identifier of the participant in the chat. 
+  Ensure that the 'userid' corresponds to the unique identifier of the participant in the chat.
+  Do not make up other users that are not in the group chat.
   The scores should be integers without any additional text or characters.
   `;
   const instruction_review = `
@@ -85,14 +86,13 @@ const openai = new OpenAI({
     }
   }
 
-
   type UserResult = {
     userid: string;
     username: string;
     address: string;
     score: number;
   };
-
+  
   function parseUserResults(scoreContent: string): UserResult[] {
     try {
       // Directly parse the scoreContent string as JSON
@@ -110,14 +110,13 @@ const openai = new OpenAI({
       return [];
     }
   }
-  
-  type ChatResult = {
+  export type ChatResult = {
     users: UserResult[];
     analysis: string;
   };
 
 // Rewards can be distributed to the addresses of the users in the ChatResult object.
-async function analyzeChat(chatlog: string): Promise<ChatResult> {
+export async function analyzeChat(chatlog: string): Promise<ChatResult> {
     try {
       const resultScore = await openai.chat.completions.create({
         messages: [{ role: "user", content: instruction_score + '\n\n' + chatlog }],
@@ -126,140 +125,34 @@ async function analyzeChat(chatlog: string): Promise<ChatResult> {
       });
       const scoreContent = resultScore?.choices[0]?.message.content;
       //console.log("The score content: " + scoreContent);
-      let userResults: UserResult[] = parseUserResults(scoreContent);
+      let userResults: UserResult[] = await parseUserResults(scoreContent);
       
-      for (let i = 0; i < userResults.length; i++) {
-        userResults[i].username = await userIdToUsername(userResults[i].userid);
-        const wallet: UserWallet = await getWalletByUserId(userResults[i].userid);
-        userResults[i].address = wallet.getWalletAddress();
+      const filteredUserResults = [];
+      for (const userResult of userResults) {
+        const wallet: UserWallet = await getWalletByUserId(userResult.userid);
+        if (wallet && wallet.getUserId() !== "") {
+          userResult.address = wallet.getWalletAddress();
+          userResult.username = await userIdToUsername(userResult.userid);
+          filteredUserResults.push(userResult);
+        } else {
+          console.log("Deleting the score of:", userResult);
+        }
       }
-      //console.log("Stringified scores: " + JSON.stringify(userResults);
       const resultReview = await openai.chat.completions.create({
-        messages: [{ role: "user", content: instruction_review + '\n\n' + JSON.stringify(userResults) + '\n\n' + chatlog }],
+        messages: [{ role: "user", content: instruction_review + '\n\n' + JSON.stringify(filteredUserResults) + '\n\n' + chatlog }],
         model: "hackathon-chat",
         temperature: 0.15,
       });
       const reviewContent = resultReview?.choices[0]?.message.content;
       //console.log("The review content: " + reviewContent);
-  
-      // Placeholder for parsing function - you need to implement it according to your data format
-      const analysis: string = reviewContent || ''; // You might want to parse this if it's structured
-  
+      const analysis: string = reviewContent || '';
       const chatResult: ChatResult = {
-        users: userResults,
+        users: filteredUserResults,
         analysis: analysis
       }
-    if (chatResult.users.length > 3) {
-        chatResult.users = chatResult.users.slice(0, 3);
-    }
-    while (chatResult.users.length < 3) {
-        chatResult.users.push({
-            userid: "",
-            username: "",
-            address: ZERO_ADDRESS,
-            score: 0
-        });
-    }
       return chatResult;
     } catch (error) {
       console.error("Error getting completion from OpenAI:", error);
       throw error;
     }
 }
-/*
-async function main () {
-    await connectToMongo();
-    const result = await analyzeChat(`[
-        {
-          "from": "Cat | Aztec",
-          "from_id": "user1464004228",
-          "text": "Wow, this bot is brutal"
-        },
-        {
-          "from": "Liam",
-          "from_id": "user5338078853",
-          "text": "its been thoroughly trained haha"
-        },
-        {
-          "from": "Henrik",
-          "from_id": "user1386759162",
-          "text": "Liam is the chat champion at the moment"
-        },
-        {
-          "from": "Liam",
-          "from_id": "user5338078853",
-          "text": "https://flare-explorer.flare.network/token/0xEf2Dc8d7c4667e34ab33B375020c85339d82D173/token-holders"
-        },
-        {
-          "from": "Liam",
-          "from_id": "user5338078853",
-          "text": "interesting statistics here"
-        },
-        {
-          "from": "Steven Xoao",
-          "from_id": "user1594037031",
-          "text": "Boring"
-        },
-        {
-          "from": "Steven Xoao",
-          "from_id": "user1594037031",
-          "text": "Minus points"
-        },
-        {
-          "from": "Steven Xoao",
-          "from_id": "user1594037031",
-          "text": "💀💀💀"
-        },
-        {
-          "from": "tim | FLock.io",
-          "from_id": "user1784852088",
-          "text": "wow"
-        },
-        {
-          "from": "tim | FLock.io",
-          "from_id": "user1784852088",
-          "text": "our model actually works"
-        },
-        {
-          "from": "Cat | Aztec",
-          "from_id": "user1464004228",
-          "text": "this is a really great idea for measuring and incentivising engagement in crypto communities"
-        },
-        {
-          "from": "tim | FLock.io",
-          "from_id": "user1784852088",
-          "text": "tears"
-        },
-        {
-          "from": "Steven Xoao",
-          "from_id": "user1594037031",
-          "text": "Such wow 😮"
-        },
-        {
-          "from": "tim | FLock.io",
-          "from_id": "user1784852088",
-          "text": "we will provide better ones, currently talking to the team"
-        },
-        {
-          "from": "Cat | Aztec",
-          "from_id": "user1464004228",
-          "text": "There’s a ton of bots for growth but i know as a dev rel we were always looking for better ways to improve engagement so this is cool"
-        },
-        {
-          "from": "Liam",
-          "from_id": "user5338078853",
-          "text": "thanks cat 🙂 we were thinking about other use cases and changing the context"
-        },
-        {
-          "from": "Cat | Aztec",
-          "from_id": "user1464004228",
-          "text": "If you can get this on discord (especially if you can integrate other tokens) this is something I can defo see a few projects using"
-        }
-      ]
-      `);
-      console.log(result.users)
-      console.log(result.analysis)
-}
-  main();
-*/
-  export { ChatResult }
