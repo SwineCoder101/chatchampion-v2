@@ -5,6 +5,7 @@ import {setupWebhook,sendMessage} from "./client/web-hook";
 import { connect } from "http2";
 import { connectToMongo } from "./client/mongo-connnect";
 import  { Message,convertToMessageObject ,deleteAllMessages,saveMessage} from "./data/message-repository";
+import path from 'path';
 
 dotenv.config();
 
@@ -127,9 +128,16 @@ app.post(URI, async (req: Request, res: Response) => {
     }
   });
 
-app.get("/", (req: Request, res: Response) => {
-    res.send("Welcome to the bot server!");
-  });
+const CONNECT_WALLET_HTML_PATH = "../connectWallet/dist";
+const CONNECT_WALLET_HTML = `${CONNECT_WALLET_HTML_PATH}/index.html`;
+
+app.use('/connectWallet', express.static(path.join(__dirname, "../connectWallet/dist")));
+
+
+app.get('/connectWallet', (req, res) => {
+    res.sendFile(path.join(__dirname, CONNECT_WALLET_HTML));
+});
+
 
 app.listen(PORT, async () => {
     console.log(`Server running on port: ${PORT}`);
