@@ -54,7 +54,7 @@ contract ChatChampionTest is Test {
         vm.warp(block.timestamp + (hoursPassed * 1 hours));
 
         // Execute the reward function
-        chatChampion.rewardUsers(user0, score0, user1, score1, user2, score2);
+        chatChampion.rewardUsers(user0, user1, user2, score0, score1, score2);
 
         // Calculate total score and total reward
         uint256 totalScore = score0 + score1 + score2;

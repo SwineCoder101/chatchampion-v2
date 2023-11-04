@@ -23,7 +23,7 @@ contract ChatChampion is ERC20, Ownable {
     function endAirDrop() public onlyOwner {
         airDropEnded = true;
     }
-    function rewardUsers(address user0, uint256 score0, address user1, uint256 score1, address user2, uint256 score2) public onlyOwner {
+    function rewardUsers(address user0, address user1, address user2, uint256 score0, uint256 score1, uint256 score2) public onlyOwner {
         // Rewards are 1000 tokens per hour
         uint256 reward = (block.timestamp - lastRewardTime) / 1 hours * 1000 ether;
         lastRewardTime = block.timestamp;

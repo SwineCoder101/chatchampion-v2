@@ -1,9 +1,8 @@
 import dotenv from "dotenv";
-import express, { Request, Response } from "express";
 import axios from "axios";
-import { WeiPerEther, ethers, formatEther } from "ethers";
 import OpenAI from "openai";
-import { Chat } from "openai/resources";
+import { UserWallet, getWalletByUserId } from "./data/wallet-repository"
+
 
 dotenv.config();
 
@@ -35,6 +34,7 @@ const openai = new OpenAI({
     Discuss specific messages or exchanges that exemplify their use of humor and contributed to their score.
     Ensure that your explanation aligns with their assigned scores and the dynamics of the conversation.
     Remember to review the messages of each participant on the scoreboard.
+    Add a paragraph at the end for each of the chatters who did not get a score where you tell them why they are bad at humor.
   `;
   
   async function userIdToUsername(userId) {
@@ -60,10 +60,32 @@ const openai = new OpenAI({
     }
   }
 
-  async function userIdToAddress(userId): Promise<string> {
-    // get address from db here
-    return "";
+  async function editBotMessage(chatId, messageId, newText) {
+    try {
+      // Check if the new text is not empty or too long for a Telegram message
+      if (!newText || newText.length > 4096) {
+        throw new Error('Text is empty or exceeds the maximum length of 4096 characters.');
+      }
+  
+      const response = await axios.post(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/editMessageText`, {
+        chat_id: chatId,
+        message_id: messageId,
+        text: newText,
+        parse_mode: 'Markdown' // Optional: You can use 'Markdown' or 'HTML' for text formatting
+      });
+  
+      if (response.data.ok) {
+        console.log('Message edited successfully:', response.data.result);
+        return response.data.result;
+      } else {
+        throw new Error(response.data.description || 'Unknown error occurred');
+      }
+    } catch (error) {
+      console.error('Error editing message:', error);
+      throw error;
+    }
   }
+
 
   type UserResult = {
     userid: string;
@@ -108,10 +130,10 @@ async function analyzeChat(chatlog: string): Promise<ChatResult> {
       
       for (let i = 0; i < userResults.length; i++) {
         userResults[i].username = await userIdToUsername(userResults[i].userid);
-        userResults[i].address = await userIdToAddress(userResults[i].userid);
+        const wallet: UserWallet = await getWalletByUserId(userResults[i].userid);
+        userResults[i].address = wallet.getWalletAddress();
       }
-      const scoreStringified = JSON.stringify(userResults);
-      //console.log("Stringified scores: " + scoreStringified);
+      //console.log("Stringified scores: " + JSON.stringify(userResults);
       const resultReview = await openai.chat.completions.create({
         messages: [{ role: "user", content: instruction_review + '\n\n' + JSON.stringify(userResults) + '\n\n' + chatlog }],
         model: "hackathon-chat",
@@ -238,3 +260,5 @@ async function main () {
       console.log(result.analysis)
 }
   main();
+
+  export { ChatResult }
