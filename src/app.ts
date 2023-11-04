@@ -28,7 +28,7 @@ app.post(URI, async (req: Request, res: Response) => {
       const userId = chunk.message.from.id;
       const sentMessage = chunk.message.text;
       console.log("chatId", chatId);
-  
+      console.log(chunk);
       // ChatCache.addUpdate(chatId, req.body);
       await saveMessage(req.body);
   

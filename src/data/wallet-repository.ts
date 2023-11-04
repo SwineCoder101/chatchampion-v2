@@ -86,6 +86,10 @@ async function deleteWallet(userId) {
 async function getWalletByUserId(userId: string) : Promise<UserWallet>{
     try {
         const result = await getWalletCollection().findOne({ userId: userId });
+        if (!result) {
+            console.error("No user with the userId " + userId + " in the database.");
+            return new UserWallet(0, 0, 0);
+        }
         return new UserWallet(result.userId, result.walletAddress, result.privateKey);
     } catch (err) {
         console.log(err);

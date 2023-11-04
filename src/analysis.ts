@@ -2,6 +2,7 @@ import dotenv from "dotenv";
 import axios from "axios";
 import OpenAI from "openai";
 import { UserWallet, getWalletByUserId } from "./data/wallet-repository"
+import { connectToMongo } from "./client/mongo-connnect";
 
 
 dotenv.config();
@@ -38,10 +39,8 @@ const openai = new OpenAI({
   `;
   
   async function userIdToUsername(userId) {
-    const normalizedUserId = userId.startsWith('user') ? userId.slice(4) : userId;
-    userId = normalizedUserId;
     try {
-      const response = await axios.get(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/getChatMember`, {
+      const response = await axios.get(`https://api.telegram.org/bot${process.env.TELEGRAM_TOKEN}/getChatMember`, {
         params: {
           chat_id: process.env.TELEGRAM_GROUP_ID,
           user_id: userId
@@ -67,7 +66,7 @@ const openai = new OpenAI({
         throw new Error('Text is empty or exceeds the maximum length of 4096 characters.');
       }
   
-      const response = await axios.post(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/editMessageText`, {
+      const response = await axios.post(`https://api.telegram.org/bot${process.env.TELEGRAM_TOKEN}/editMessageText`, {
         chat_id: chatId,
         message_id: messageId,
         text: newText,
@@ -100,7 +99,8 @@ const openai = new OpenAI({
       const scoreArray: { userid: string; score: number; }[] = JSON.parse(scoreContent);
   
       return scoreArray.map(scoreObj => ({
-        userid: scoreObj.userid,
+        // Normalize the userid while mapping over the scoreArray
+        userid: scoreObj.userid.startsWith('user') ? scoreObj.userid.slice(4) : scoreObj.userid,
         username: "unknown", // Placeholder value
         address: "unknown",  // Placeholder value
         score: scoreObj.score
@@ -166,8 +166,9 @@ async function analyzeChat(chatlog: string): Promise<ChatResult> {
       throw error;
     }
 }
-
+/*
 async function main () {
+    await connectToMongo();
     const result = await analyzeChat(`[
         {
           "from": "Cat | Aztec",
@@ -260,5 +261,5 @@ async function main () {
       console.log(result.analysis)
 }
   main();
-
+*/
   export { ChatResult }
