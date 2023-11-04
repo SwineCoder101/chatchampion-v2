@@ -6,6 +6,9 @@ import { connect } from "http2";
 import { connectToMongo } from "./client/mongo-connnect";
 import  { Message,convertToMessageObject ,deleteAllMessages,saveMessage} from "./data/message-repository";
 import path from 'path';
+import cors from 'cors';
+import { get } from "http";
+import {getAddressFromSignature} from "./blockchain";
 
 dotenv.config();
 
@@ -18,7 +21,34 @@ const webhookURL = `${SERVER_URL}${URI}`;
 const app = express();
 app.use(express.json());
 
+// Set up a whitelist and check against it:
+const whitelist = ['http://localhost:5173', SERVER_URL]; // Replace with your frontend's URL
+const corsOptions = {
+  origin: function (origin, callback) {
+    if (whitelist.indexOf(origin) !== -1 || !origin) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  }
+};
 
+app.options('*', cors(corsOptions));
+
+app.use(cors(corsOptions));
+
+
+app.post('/signWallet', async (req: Request, res: Response) => {
+    console.log('signing the wallet here....   ');
+    try{
+        const chunk = req.body;
+        const address = getAddressFromSignature(chunk.signature, chunk.message);
+        return res.status(200).send({isSignedIn: true, address: address});
+    }catch(error){
+        console.error(error);
+        return res.status(500).send({isSignedIn: false});
+    };
+});
 
 
 app.post(URI, async (req: Request, res: Response) => {
@@ -130,6 +160,8 @@ app.post(URI, async (req: Request, res: Response) => {
 
 const CONNECT_WALLET_HTML_PATH = "../connectWallet/dist";
 const CONNECT_WALLET_HTML = `${CONNECT_WALLET_HTML_PATH}/index.html`;
+
+
 
 app.use('/connectWallet', express.static(path.join(__dirname, "../connectWallet/dist")));
 
