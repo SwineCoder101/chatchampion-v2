@@ -1,7 +1,9 @@
 import express, { Request, Response } from "express";
 import axios from "axios";
 import dotenv from "dotenv";
-import {setupWebhook} from "./client/webhook";
+import {setupWebhook} from "./client/web-hook";
+import { connect } from "http2";
+import { connectToMongo } from "./client/mongo-connnect";
 
 dotenv.config();
 
@@ -19,6 +21,7 @@ app.listen(PORT, async () => {
     console.log(`Server running on port: ${PORT}`);
     try {
       await setupWebhook();
+      await connectToMongo();
     } catch (error) {
       console.error("Webhook setup failed:", error.message);
     }
