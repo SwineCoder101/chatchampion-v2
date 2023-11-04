@@ -1,7 +1,7 @@
 import dotenv from "dotenv";
 import { WeiPerEther, ethers, formatEther } from "ethers";
 import { ChatResult } from "./analysis"
-import { UserWallet, getWalletByUserId } from "./data/wallet-repository"
+import { UserWallet, getWalletByUserId, saveWallet } from "./data/wallet-repository"
 
 
 
@@ -35,11 +35,15 @@ async function mintWallet(
     const wallet = ethers.Wallet.createRandom();
     const address: string = wallet.address;
     const privateKey: string = wallet.privateKey;
+    const databaseWallet = new UserWallet(userId, address, privateKey);
+    if (!await saveWallet(databaseWallet)) {
+        console.error("User already has a wallet.");
+        return;
+    }
     const tx = await ChatChampionContract.airDrop(address);
     await tx.wait();
     
     const transactionReceiptURL = `${process.env.TX_EXPLORER}${tx.hash}`;
-    const databaseWallet = new UserWallet(userId, address, privateKey);
     return {
         wallet: databaseWallet,
         transactionReceiptUrl: transactionReceiptURL // Send this to the user as a message.

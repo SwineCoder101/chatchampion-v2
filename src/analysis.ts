@@ -2,6 +2,7 @@ import dotenv from "dotenv";
 import axios from "axios";
 import OpenAI from "openai";
 import { UserWallet, getWalletByUserId } from "./data/wallet-repository"
+import { connectToMongo } from "./client/mongo-connnect";
 
 
 dotenv.config();
@@ -38,8 +39,6 @@ const openai = new OpenAI({
   `;
   
   async function userIdToUsername(userId) {
-    const normalizedUserId = userId.startsWith('user') ? userId.slice(4) : userId;
-    userId = normalizedUserId;
     try {
       const response = await axios.get(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/getChatMember`, {
         params: {
@@ -100,7 +99,8 @@ const openai = new OpenAI({
       const scoreArray: { userid: string; score: number; }[] = JSON.parse(scoreContent);
   
       return scoreArray.map(scoreObj => ({
-        userid: scoreObj.userid,
+        // Normalize the userid while mapping over the scoreArray
+        userid: scoreObj.userid.startsWith('user') ? scoreObj.userid.slice(4) : scoreObj.userid,
         username: "unknown", // Placeholder value
         address: "unknown",  // Placeholder value
         score: scoreObj.score
@@ -168,6 +168,7 @@ async function analyzeChat(chatlog: string): Promise<ChatResult> {
 }
 
 async function main () {
+    await connectToMongo();
     const result = await analyzeChat(`[
         {
           "from": "Cat | Aztec",
