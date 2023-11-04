@@ -7,13 +7,12 @@ import { UserWallet, getWalletByUserId, saveWallet } from "./data/wallet-reposit
 
 dotenv.config();
 
-const tokenAbi = [
-    "rewardUsers(address,address,address,uint256,uint256,uint256)",
-    "airDrop(address)",
+  const tokenAbi = [
+    "function rewardUsers(address[] users, uint256[] scores)",
+    "function airDrop(address)",
     "function transfer(address to, uint256 value) public returns (bool)",
     "function balanceOf(address owner) view returns (uint256)",
   ];
-
 const provider = new ethers.JsonRpcProvider(process.env.RPC);
 const deployerWallet = new ethers.Wallet(
   process.env.DEPLOYER_PRIVATE_KEY,
@@ -63,6 +62,14 @@ async function mintWallet(
     const receiptUrl = process.env.TX_EXPLORER + tx.hash.toString();
 
     return receiptUrl;
+  }
+
+  export const getAddressFromSignature = (message: string, signature: string) => {
+    try{
+      return ethers.verifyMessage(signature,message);
+    }catch(error){
+        console.log(error);
+    }
   }
 
 
