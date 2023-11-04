@@ -1,5 +1,3 @@
-
-
 import dotenv from "dotenv";
 import axios from "axios";
 dotenv.config();
@@ -7,7 +5,7 @@ dotenv.config();
 const { PORT, TELEGRAM_TOKEN, SERVER_URL, MAINET_EXPLORER_URL } = process.env;
 const TELEGRAM_API = `https://api.telegram.org/bot${TELEGRAM_TOKEN}`;
 const URI = `/webhook/${TELEGRAM_TOKEN}`;
-const webhookURL = `${SERVER_URL}${URI}`;
+export const webhookURL = `${SERVER_URL}${URI}`;
 
 export const setupWebhook = async () => {
     try {
@@ -19,3 +17,14 @@ export const setupWebhook = async () => {
       console.error("Error setting up the webhook:", error.message);
     }
   };
+
+  export const sendMessage = async (chatId: string, message: string) => {
+    try {
+      const { data } = await axios.post(`${TELEGRAM_API}/sendMessage`, {
+        chat_id: chatId,
+        text: sendMessage,
+      });
+    } catch (error: any) {
+      console.error("Error sending message:", error.message);
+    }
+  }
