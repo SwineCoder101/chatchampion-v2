@@ -1,17 +1,131 @@
 import express, { Request, Response } from "express";
 import axios from "axios";
 import dotenv from "dotenv";
-import {setupWebhook} from "./client/web-hook";
+import {setupWebhook,sendMessage} from "./client/web-hook";
 import { connect } from "http2";
 import { connectToMongo } from "./client/mongo-connnect";
+import  { Message,convertToMessageObject ,deleteAllMessages,saveMessage} from "./data/message-repository";
 
 dotenv.config();
 
 const { PORT, TELEGRAM_TOKEN, SERVER_URL, MAINET_EXPLORER_URL } = process.env;
 
+const TELEGRAM_API = `https://api.telegram.org/bot${TELEGRAM_TOKEN}`;
+const URI = `/webhook/${TELEGRAM_TOKEN}`;
+const webhookURL = `${SERVER_URL}${URI}`;
+
 const app = express();
 app.use(express.json());
 
+
+
+
+app.post(URI, async (req: Request, res: Response) => {
+    try {
+      const chunk = req.body;
+      const chatId = chunk.message.chat.id;
+      const userId = chunk.message.from.id;
+      const sentMessage = chunk.message.text;
+      console.log("chatId", chatId);
+  
+      // ChatCache.addUpdate(chatId, req.body);
+      await saveMessage(req.body);
+  
+      const regexCreateWallet = /^\/createWallet\s+(\S+)/;
+      const matchForCreateWallet = sentMessage.match(regexCreateWallet);
+  
+      const regexRedeem = /^\/redeem\s+(\S+)/;
+      const matchForRedeem = sentMessage.match(regexRedeem);
+  
+    //   if (matchForRedeem) {
+    //     const address = matchForRedeem[1];
+    //     let userWalletInfo = await queryDatabaseByUserId(userId + "A");
+    //     console.log(userWalletInfo);
+  
+    //     if (!userWalletInfo || !userWalletInfo.address) {
+    //       await sendMessage(
+    //         chatId,
+    //         "The following user does not have a wallet: " +
+    //           userWalletInfo.username
+    //       );
+    //     }
+  
+    //     if (!userWalletInfo || !userWalletInfo.address) {
+    //       await sendMessage(
+    //         chatId,
+    //         "The following user had already redeemed" +
+    //           userWalletInfo.username +
+    //           " to address: " +
+    //           userWalletInfo.address
+    //       );
+    //     }
+  
+    //     await sendMessage(
+    //       chatId,
+    //       "about to redeem tokens for " +
+    //         userWalletInfo.username +
+    //         " to address: " +
+    //         address
+    //     );
+  
+    //     const urlReciept = await redeemTokens(
+    //       userWalletInfo.username,
+    //       address,
+    //       userWalletInfo.key,
+    //       userWalletInfo.address
+    //     );
+  
+    //     // await deleteRowByUsername(userWalletInfo.username);
+    //     // await addToDatabase(userId + "A", userWalletInfo.username, '', address);
+  
+    //     const numberOftokens = await balanceOf(address);
+    //   }
+  
+      //create a wallet
+    //   if (matchForCreateWallet) {
+    //     const username = matchForCreateWallet[1];
+    //     const userWalletInfo = await queryDatabaseByUserName(username);
+    //     console.log(userWalletInfo);
+    //   }
+  
+      //analyze the chat
+    //   if (sentMessage === "/analyze") {
+    //     const updates = ChatCache.getUpdates(chatId);
+    //     await sendMessage(chatId, "Analysing the chat now ...");
+    //     const { reasoning, reciepts } = await startAnalysis(updates);
+    //     console.log(reasoning);
+    //     await sendMessage(chatId, reasoning + "\n" + reciepts.join("\n"));
+    //     ChatCache.resetChat(chatId);
+    //   }
+  
+      if (sentMessage === "/start") {
+        const welcomeMsg = `Welcome Chat Champion! 🌟🚀🎉
+  
+              Welcome to Chat Champions, an engaging Telegram community where you can earn tokens by chatting, engaging with communities, and sharing your humor through jokes. Join us, climb the leaderboard for rewards, participate in fun challenges, and reach out to our Chatbot Champions for assistance. Don't forget to create your wallet by messaging our admins to enhance your Chat Champions experience! 🌟💬🚀🎉
+              
+              Why be a Chat Champion?
+              - Earn tokens by chatting and engaging with communities. 💬💰
+              - Share humor and make jokes to add positivity. 😂😁
+              - Climb the leaderboard for exciting rewards. 🏆🎁
+              - Participate in regular challenges and special events. 🌈🎉
+              - Chatbot Champions are ready to assist you. 🤖💼
+              - Create your wallet for an enhanced experience. 💼✨
+              - To redeem your tokens, type /redeem <address>💰
+              
+              Join now and DM our admins to get EXCLUSIVE ACCESS and WIN CHAMP Tokens!💬🏆`;
+  
+        await sendMessage(chatId, welcomeMsg);
+      }
+  
+      // Send the response after the asynchronous operation is complete
+      res.status(200).send("ok");
+    } catch (error) {
+      console.error(error);
+  
+      // Since no response has been sent yet, it's safe to send the error response here
+      res.status(500).send("Internal Server Error");
+    }
+  });
 
 app.get("/", (req: Request, res: Response) => {
     res.send("Welcome to the bot server!");
