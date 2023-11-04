@@ -83,13 +83,14 @@ async function deleteWallet(userId) {
     return true;
 }
 
-async function getWalletByUserId(userId) {
-    await getWalletCollection().findOne({userId: userId}).then((result) => {
-        console.log(result);
-    }
-    ).catch((err) => {
+async function getWalletByUserId(userId: string) : Promise<UserWallet>{
+    try {
+        const result = await getWalletCollection().findOne({ userId: userId });
+        return new UserWallet(result.userId, result.walletAddress, result.privateKey);
+    } catch (err) {
         console.log(err);
-    });
+        throw err;
+    }
 }
 
 export {UserWallet, saveWallet, updateWallet, deleteWallet, getWalletByUserId};
