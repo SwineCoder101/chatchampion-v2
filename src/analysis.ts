@@ -40,7 +40,7 @@ const openai = new OpenAI({
   
   async function userIdToUsername(userId) {
     try {
-      const response = await axios.get(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/getChatMember`, {
+      const response = await axios.get(`https://api.telegram.org/bot${process.env.TELEGRAM_TOKEN}/getChatMember`, {
         params: {
           chat_id: process.env.TELEGRAM_GROUP_ID,
           user_id: userId
@@ -66,7 +66,7 @@ const openai = new OpenAI({
         throw new Error('Text is empty or exceeds the maximum length of 4096 characters.');
       }
   
-      const response = await axios.post(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/editMessageText`, {
+      const response = await axios.post(`https://api.telegram.org/bot${process.env.TELEGRAM_TOKEN}/editMessageText`, {
         chat_id: chatId,
         message_id: messageId,
         text: newText,
@@ -166,7 +166,7 @@ async function analyzeChat(chatlog: string): Promise<ChatResult> {
       throw error;
     }
 }
-
+/*
 async function main () {
     await connectToMongo();
     const result = await analyzeChat(`[
@@ -261,5 +261,5 @@ async function main () {
       console.log(result.analysis)
 }
   main();
-
+*/
   export { ChatResult }

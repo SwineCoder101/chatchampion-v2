@@ -22,7 +22,7 @@ export const setupWebhook = async () => {
     try {
       const { data } = await axios.post(`${TELEGRAM_API}/sendMessage`, {
         chat_id: chatId,
-        text: sendMessage,
+        text: message,
       });
     } catch (error: any) {
       console.error("Error sending message:", error.message);
