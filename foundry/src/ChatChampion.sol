@@ -28,9 +28,14 @@ contract ChatChampion is ERC20, Ownable {
         uint256 reward = (block.timestamp - lastRewardTime) / 1 hours * 1000 ether;
         lastRewardTime = block.timestamp;
         uint256 totalScore = score0 + score1 + score2;
-        _mint(user0, (score0 * reward) / totalScore);
-        _mint(user1, (score1 * reward) / totalScore);
-        _mint(user2, (score2 * reward) / totalScore);
-
+        if (score0 > 0){
+            _mint(user0, (score0 * reward) / totalScore);
+        }
+        if (score1 > 0) {
+            _mint(user1, (score1 * reward) / totalScore);
+        }
+        if (score2 > 0) {
+            _mint(user2, (score2 * reward) / totalScore);
+        }
     }
 }

@@ -7,6 +7,8 @@ import { Chat } from "openai/resources";
 
 dotenv.config();
 
+const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000'
+
 const openai = new OpenAI({
     apiKey: "",
     baseURL: "http://flock.tools:8001/v1", // defaults to https://api.openai.com/v1
@@ -92,6 +94,7 @@ const openai = new OpenAI({
     analysis: string;
   };
 
+// Rewards can be distributed to the addresses of the users in the ChatResult object.
 async function analyzeChat(chatlog: string): Promise<ChatResult> {
     try {
       const resultScore = await openai.chat.completions.create({
@@ -100,7 +103,7 @@ async function analyzeChat(chatlog: string): Promise<ChatResult> {
         temperature: 0,
       });
       const scoreContent = resultScore?.choices[0]?.message.content;
-      console.log("The score content: " + scoreContent);
+      //console.log("The score content: " + scoreContent);
       let userResults: UserResult[] = parseUserResults(scoreContent);
       
       for (let i = 0; i < userResults.length; i++) {
@@ -108,14 +111,14 @@ async function analyzeChat(chatlog: string): Promise<ChatResult> {
         userResults[i].address = await userIdToAddress(userResults[i].userid);
       }
       const scoreStringified = JSON.stringify(userResults);
-      console.log("Stringified scores: " + scoreStringified);
+      //console.log("Stringified scores: " + scoreStringified);
       const resultReview = await openai.chat.completions.create({
         messages: [{ role: "user", content: instruction_review + '\n\n' + JSON.stringify(userResults) + '\n\n' + chatlog }],
         model: "hackathon-chat",
         temperature: 0.15,
       });
       const reviewContent = resultReview?.choices[0]?.message.content;
-      console.log("The review content: " + reviewContent);
+      //console.log("The review content: " + reviewContent);
   
       // Placeholder for parsing function - you need to implement it according to your data format
       const analysis: string = reviewContent || ''; // You might want to parse this if it's structured
@@ -124,6 +127,17 @@ async function analyzeChat(chatlog: string): Promise<ChatResult> {
         users: userResults,
         analysis: analysis
       }
+    if (chatResult.users.length > 3) {
+        chatResult.users = chatResult.users.slice(0, 3);
+    }
+    while (chatResult.users.length < 3) {
+        chatResult.users.push({
+            userid: "",
+            username: "",
+            address: ZERO_ADDRESS,
+            score: 0
+        });
+    }
       return chatResult;
     } catch (error) {
       console.error("Error getting completion from OpenAI:", error);
@@ -131,17 +145,8 @@ async function analyzeChat(chatlog: string): Promise<ChatResult> {
     }
 }
 
-function main () {
-    /*analyzeChat(`{"ok":true,"result":[{"update_id":177312581,
-    "message":{"message_id":23,"from":{"id":5338078853,"is_bot":false,"first_name":"Liam","username":"LiamTel","language_code":"en"},"chat":{"id":-4066054986,"title":"Chat Championship","type":"group","all_members_are_administrators":true},"date":1698452054,"text":"hey henrik whatsup , this is a test"}},{"update_id":177312582,
-    "message":{"message_id":24,"from":{"id":1386759162,"is_bot":false,"first_name":"Henrik","username":"henrik1111","language_code":"en"},"chat":{"id":-4066054986,"title":"Chat Championship","type":"group","all_members_are_administrators":true},"date":1698452068,"text":"Thanks for giving sample text"}},{"update_id":177312583,
-    "message":{"message_id":25,"from":{"id":1386759162,"is_bot":false,"first_name":"Henrik","username":"henrik1111","language_code":"en"},"chat":{"id":-4066054986,"title":"Chat Championship","type":"group","all_members_are_administrators":true},"date":1698452071,"text":"lol"}},{"update_id":177312584,
-    "message":{"message_id":26,"from":{"id":5338078853,"is_bot":false,"first_name":"Liam","username":"LiamTel","language_code":"en"},"chat":{"id":-4066054986,"title":"Chat Championship","type":"group","all_members_are_administrators":true},"date":1698452083,"text":"do you know whats blue and not heavy?"}},{"update_id":177312585,
-    "message":{"message_id":27,"from":{"id":1386759162,"is_bot":false,"first_name":"Henrik","username":"henrik1111","language_code":"en"},"chat":{"id":-4066054986,"title":"Chat Championship","type":"group","all_members_are_administrators":true},"date":1698452088,"text":"no"}},{"update_id":177312586,
-    "message":{"message_id":28,"from":{"id":5338078853,"is_bot":false,"first_name":"Liam","username":"LiamTel","language_code":"en"},"chat":{"id":-4066054986,"title":"Chat Championship","type":"group","all_members_are_administrators":true},"date":1698452093,"text":"light blue"}},{"update_id":177312587,
-    "message":{"message_id":29,"from":{"id":1386759162,"is_bot":false,"first_name":"Henrik","username":"henrik1111","language_code":"en"},"chat":{"id":-4066054986,"title":"Chat Championship","type":"group","all_members_are_administrators":true},"date":1698452097,"text":"ahhahhah'"}}]}`);
-*/
-    analyzeChat(`[
+async function main () {
+    const result = await analyzeChat(`[
         {
           "from": "Cat | Aztec",
           "from_id": "user1464004228",
@@ -229,35 +234,7 @@ function main () {
         }
       ]
       `);
+      console.log(result.users)
+      console.log(result.analysis)
 }
   main();
-
-/*
-async function startAnalysis(messages: string) {
-    console.log("Result:\n");
-    var result = await analyzeChat(instruction + messages);
-    console.log(result);
-  
-    const reciepts = await distribute(result);
-  
-    console.log("Reasoning:\n");
-    var reasoning = await analyzeChat(
-      instruction2 +
-        "\n\nLeaderboard:\n" +
-        result +
-        "\n\nChatroom messages:\n" +
-        messages
-    );
-    return { reasoning, reciepts };
-  }
-
-  //analyze the chat
-  if (sentMessage === "/analyze") {
-    const updates = ChatCache.getUpdates(chatId);
-    await sendMessage(chatId, "Analysing the chat now ...");
-    const { reasoning, reciepts } = await startAnalysis(updates);
-    console.log(reasoning);
-    await sendMessage(chatId, reasoning + "\n" + reciepts.join("\n"));
-    ChatCache.resetChat(chatId);
-  }
-*/
