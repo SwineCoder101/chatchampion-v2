@@ -4,11 +4,12 @@ import dotenv from "dotenv";
 import {setupWebhook,sendMessage} from "./client/web-hook";
 import { connect } from "http2";
 import { connectToMongo } from "./client/mongo-connnect";
-import  { Message,convertToMessageObject ,deleteAllMessages,saveMessage} from "./data/message-repository";
+import  { Message,convertToMessageObject ,deleteAllMessages,saveMessage, getFormatedMessages } from "./data/message-repository";
+import { analyzeChat } from "./analysis"
 import path from 'path';
 import cors from 'cors';
 import { get } from "http";
-import {getAddressFromSignature} from "./blockchain";
+import {getAddressFromSignature, reward} from "./blockchain";
 
 dotenv.config();
 
@@ -61,73 +62,25 @@ app.post(URI, async (req: Request, res: Response) => {
       console.log(chunk);
       // ChatCache.addUpdate(chatId, req.body);
       await saveMessage(req.body);
-  
-      const regexCreateWallet = /^\/createWallet\s+(\S+)/;
-      const matchForCreateWallet = sentMessage.match(regexCreateWallet);
-  
+    
       const regexRedeem = /^\/redeem\s+(\S+)/;
       const matchForRedeem = sentMessage.match(regexRedeem);
   
-    //   if (matchForRedeem) {
-    //     const address = matchForRedeem[1];
-    //     let userWalletInfo = await queryDatabaseByUserId(userId + "A");
-    //     console.log(userWalletInfo);
-  
-    //     if (!userWalletInfo || !userWalletInfo.address) {
-    //       await sendMessage(
-    //         chatId,
-    //         "The following user does not have a wallet: " +
-    //           userWalletInfo.username
-    //       );
-    //     }
-  
-    //     if (!userWalletInfo || !userWalletInfo.address) {
-    //       await sendMessage(
-    //         chatId,
-    //         "The following user had already redeemed" +
-    //           userWalletInfo.username +
-    //           " to address: " +
-    //           userWalletInfo.address
-    //       );
-    //     }
-  
-    //     await sendMessage(
-    //       chatId,
-    //       "about to redeem tokens for " +
-    //         userWalletInfo.username +
-    //         " to address: " +
-    //         address
-    //     );
-  
-    //     const urlReciept = await redeemTokens(
-    //       userWalletInfo.username,
-    //       address,
-    //       userWalletInfo.key,
-    //       userWalletInfo.address
-    //     );
-  
-    //     // await deleteRowByUsername(userWalletInfo.username);
-    //     // await addToDatabase(userId + "A", userWalletInfo.username, '', address);
-  
-    //     const numberOftokens = await balanceOf(address);
-    //   }
-  
-      //create a wallet
-    //   if (matchForCreateWallet) {
-    //     const username = matchForCreateWallet[1];
-    //     const userWalletInfo = await queryDatabaseByUserName(username);
-    //     console.log(userWalletInfo);
-    //   }
+
   
       //analyze the chat
-    //   if (sentMessage === "/analyze") {
-    //     const updates = ChatCache.getUpdates(chatId);
-    //     await sendMessage(chatId, "Analysing the chat now ...");
-    //     const { reasoning, reciepts } = await startAnalysis(updates);
-    //     console.log(reasoning);
-    //     await sendMessage(chatId, reasoning + "\n" + reciepts.join("\n"));
-    //     ChatCache.resetChat(chatId);
-    //   }
+       if (sentMessage === "/analyze") {
+        const updates = await getFormatedMessages();
+        await sendMessage(chatId, "Analysing the chat now ...");
+        const chatResult = await analyzeChat(updates);
+        if (chatResult.users.length < 1) {
+          sendMessage(chatId, "I made a mistake in my JSON file and could not reward any users.");
+        }
+        //await sendMessage(chatId, chatResult.analysis + "\n" + chatResult.users.join("\n"));
+        const rewardReceipt = await reward(chatResult);
+        await sendMessage(chatId, chatResult.analysis + "\n" + rewardReceipt);
+        //ChatCache.resetChat(chatId);
+      }
   
       if (sentMessage === "/start") {
         const welcomeMsg = `Welcome Chat Champion! 🌟🚀🎉

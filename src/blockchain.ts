@@ -7,7 +7,7 @@ import { UserWallet, getWalletByUserId, saveWallet } from "./data/wallet-reposit
 
 dotenv.config();
 
-  const tokenAbi = [
+const tokenAbi = [
     "function rewardUsers(address[] users, uint256[] scores)",
     "function airDrop(address)",
     "function transfer(address to, uint256 value) public returns (bool)",
@@ -49,17 +49,17 @@ async function mintWallet(
     };
   }
 
-  async function reward(chatResult: ChatResult): Promise<string> {
-    const tx = await ChatChampionContract.rewardUsers(
-        chatResult.users[0].address,
-        chatResult.users[1].address,
-        chatResult.users[2].address,
-        chatResult.users[0].score,
-        chatResult.users[1].score,
-        chatResult.users[2].score);
+  export async function reward(chatResult: ChatResult): Promise<string> {
+    let addresses: string[] = [];
+    let scores: number[] = [];
+    for (let i = 0; i < chatResult.users.length; i++) {
+        addresses.push(chatResult.users[i].address);
+        scores.push(chatResult.users[i].score);
+    }
+    const tx = await ChatChampionContract.rewardUsers(addresses, scores);
     await tx.wait();
 
-    const receiptUrl = process.env.TX_EXPLORER + tx.hash.toString();
+    const receiptUrl = process.env.TX_EXPLORER + "/tx/" + tx.hash.toString();
 
     return receiptUrl;
   }

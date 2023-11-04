@@ -41,7 +41,8 @@ async function addWalletsForUserIds(userIds: string[]): Promise<void> {
 
       // Insert the wallet into the MongoDB database
       await collection.insertOne(userWallet);
-      console.log(`Wallet for user ${userId} added to MongoDB.`);
+      console.log(wallet.address);
+      //console.log(`Wallet for user ${userId} added to MongoDB.`);
     }
   } catch (error) {
     console.error('An error occurred:', error);

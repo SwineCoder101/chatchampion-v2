@@ -23,19 +23,27 @@ contract ChatChampion is ERC20, Ownable {
     function endAirDrop() public onlyOwner {
         airDropEnded = true;
     }
-    function rewardUsers(address user0, address user1, address user2, uint256 score0, uint256 score1, uint256 score2) public onlyOwner {
-        // Rewards are 1000 tokens per hour
+    function rewardUsers(address[] memory users, uint256[] memory scores) public onlyOwner {
+        require(users.length == scores.length, "Users and scores length mismatch");
+
+        // Calculate the total reward based on the time elapsed since the last reward
         uint256 reward = (block.timestamp - lastRewardTime) / 1 hours * 1000 ether;
         lastRewardTime = block.timestamp;
-        uint256 totalScore = score0 + score1 + score2;
-        if (score0 > 0){
-            _mint(user0, (score0 * reward) / totalScore);
+
+        // Calculate the total score
+        uint256 totalScore = 0;
+        for (uint256 i = 0; i < scores.length; i++) {
+            totalScore += scores[i];
         }
-        if (score1 > 0) {
-            _mint(user1, (score1 * reward) / totalScore);
-        }
-        if (score2 > 0) {
-            _mint(user2, (score2 * reward) / totalScore);
+
+        // Require that the totalScore is greater than 0 to prevent division by zero
+        require(totalScore > 0, "Total score must be greater than 0");
+
+        // Distribute rewards based on each user's score
+        for (uint256 i = 0; i < users.length; i++) {
+            if (scores[i] > 0) {
+                _mint(users[i], (scores[i] * reward) / totalScore);
+            }
         }
     }
 }

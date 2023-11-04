@@ -43,7 +43,7 @@ export async function deleteAllMessages(){
 export async function getAllMessages(){
   return await getMessageCollection().find({}).toArray();
 }
-
+/*
 //to be used for the analysis
 export async function getformattedMessages(){
   const messages = await getAllMessages();
@@ -51,6 +51,21 @@ export async function getformattedMessages(){
     return `${message.timestamp} : ${message.username}(${message.userId}) : ${message.message}`;
   });
   return formattedMessages.join("\n");
+}
+*/
+export async function getFormatedMessages() {
+  const messages = await getAllMessages(); // Assuming this function returns a promise with the raw message data
+
+  // Map the raw message data to the desired format
+  const formattedMessages = messages.map((message) => {
+    return {
+      from: message.username,     // Assuming 'username' field exists and should be used for 'from'
+      from_id: `user${message.userId}`, // Prefixing 'user' to the userId
+      text: message.message       // Assuming 'message' field exists for the message text
+    };
+  });
+
+  return JSON.stringify(formattedMessages, null, 2);
 }
 
 export async function saveMessage(telegramPayload: any){
