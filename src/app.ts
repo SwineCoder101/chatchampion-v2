@@ -1,16 +1,13 @@
-import express, { Request, Response } from "express";
-import axios from "axios";
-import dotenv from "dotenv";
-import {setupWebhook,sendMessage} from "./client/web-hook";
-import { connect } from "http2";
-import { connectToMongo } from "./client/mongo-connnect";
-import  { Message,convertToMessageObject ,deleteAllMessages,saveMessage, getFormatedMessages } from "./data/message-repository";
-import { analyzeChat } from "./analysis"
-import path from 'path';
 import cors from 'cors';
-import { get } from "http";
-import {getAddressFromSignature, reward,mintWallet,createSecretMessage} from "./blockchain";
-import {saveWalletFromStart} from "./data/wallet-repository";
+import dotenv from "dotenv";
+import express, { Request, Response } from "express";
+import path from 'path';
+import { analyzeChat } from "./analysis";
+import { createSecretMessage, getAddressFromSignature, mintWallet, reward } from "./blockchain";
+import { connectToMongo } from "./client/mongo-connnect";
+import { sendMessage, setupWebhook } from "./client/web-hook";
+import { deleteAllMessages, getFormatedMessages, saveMessage } from "./data/message-repository";
+import { saveWalletFromStart } from "./data/wallet-repository";
 
 
 dotenv.config();
@@ -69,12 +66,23 @@ app.post(URI, async (req: Request, res: Response) => {
       const regexRedeem = /^\/redeem\s+(\S+)/;
       const matchForRedeem = sentMessage.match(regexRedeem);
 
+      const regexCreateWallet = /^\/createWallet\s+(\S+)/;
+      const matchForCreateWallet = sentMessage.match(regexCreateWallet);
+
       //check if chunk has new_chat_participant
       if (chunk.message.new_chat_participant) {
         console.log("--------------> new user joined");
         const newUserInfo = chunk.message.new_chat_participant;
         const {secretMessage} = await mintWallet(newUserInfo.id);
       }
+
+      if (matchForCreateWallet) {
+        const userId = matchForCreateWallet[1];
+        console.log("--------------> creating wallet for user id: ", userId);
+        const {secretMessage, transactionReceiptUrl} = await mintWallet(userId);
+        await sendMessage(chatId, `creating wallet for user id with minted tokens: ${transactionReceiptUrl}`);
+      }
+      
   
       //analyze the chat
        if (sentMessage === "/analyze") {
