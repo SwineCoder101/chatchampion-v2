@@ -119,10 +119,11 @@ async function redeemTokens(
       );
   
       // Fund gas, code should be replaced
-      await deployerWallet.sendTransaction({
+      const tx = await deployerWallet.sendTransaction({
         to: custodialWallet,
         value: ethers.parseEther("0.05"),
       });
+      await tx.wait();
   
       const balance: ethers.BigNumberish = await ChatChampionContractAsUser.balanceOf(custodialWallet);
   
@@ -136,6 +137,8 @@ async function redeemTokens(
         personalWalletAddress,
         balance
       );
+      await result.wait();
+      wallet.setWalletAddress(personalWalletAddress);
       console.log(
         `Successfully transferred ${balance.toString()} tokens to ${personalWalletAddress} for user ${userId}. Transaction Hash: ${
           result.hash
