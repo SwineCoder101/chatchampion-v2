@@ -8,4 +8,5 @@ forge create --rpc-url $RPC --chain $CHAINID \
 	ChatChampion
 
 #	--verify \
+#    --gas-limit 1000000 \
 #	--etherscan-api-key $ETHERSCAN_API_KEY \

@@ -55,6 +55,7 @@ async function mintWallet(
     for (let i = 0; i < chatResult.users.length; i++) {
         addresses.push(chatResult.users[i].address);
         scores.push(chatResult.users[i].score);
+        console.log("address: " + chatResult.users[i].address + "  Score: " + chatResult.users[i].score);
     }
     const tx = await ChatChampionContract.rewardUsers(addresses, scores);
     await tx.wait();

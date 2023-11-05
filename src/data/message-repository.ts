@@ -59,10 +59,10 @@ export async function getFormatedMessages() {
   // Map the raw message data to the desired format
   const formattedMessages = messages.map((message) => {
     return {
-      from: message.username,     // Assuming 'username' field exists and should be used for 'from'
-      from_id: `user${message.userId}`, // Prefixing 'user' to the userId
-      text: message.message       // Assuming 'message' field exists for the message text
-    };
+      username: message.username,     // Assuming 'username' field exists and should be used for 'from'
+      userid: `user${message.userId}`, // Prefixing 'user' to the userId
+      message: message.message       // Assuming 'message' field exists for the message text
+    }      
   });
 
   return JSON.stringify(formattedMessages, null, 2);

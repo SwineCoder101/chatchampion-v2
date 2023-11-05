@@ -18,7 +18,7 @@ const openai = new OpenAI({
   Analyze the participants of the conversation below based on their humor. 
   Consider elements like wit, puns, timing, and context. 
   Assign an integer score to the top three participants based on their humor. 
-  Please provide the output in a JSON array with objects containing 'userid' and 'score' keys. 
+  Please provide the output in a JSON array with objects containing 'userid' and 'score' keys.
   For example: 
   [
     {"userid": "user1234567890", "score": 8}, 
@@ -124,16 +124,23 @@ export async function analyzeChat(chatlog: string): Promise<ChatResult> {
         temperature: 0,
       });
       const scoreContent = resultScore?.choices[0]?.message.content;
+      console.log(chatlog);
       //console.log("The score content: " + scoreContent);
       let userResults: UserResult[] = await parseUserResults(scoreContent);
       
       const filteredUserResults = [];
+      const seenWalletAddresses = {};
+      
       for (const userResult of userResults) {
         const wallet: UserWallet = await getWalletByUserId(userResult.userid);
-        if (wallet && wallet.getUserId() !== "") {
+        // Check if the wallet exists and has a non-empty user ID,
+        // and also if the wallet address has not been seen before.
+        if (wallet && wallet.getUserId() !== "" && !seenWalletAddresses[wallet.getWalletAddress()]) {
           userResult.address = wallet.getWalletAddress();
           userResult.username = await userIdToUsername(userResult.userid);
           filteredUserResults.push(userResult);
+          // Mark this wallet address as seen.
+          seenWalletAddresses[userResult.address] = true;
         } else {
           console.log("Deleting the score of:", userResult);
         }

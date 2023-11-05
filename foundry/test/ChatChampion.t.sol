@@ -2,70 +2,71 @@
 pragma solidity ^0.8.20;
 
 import "forge-std/Test.sol";
-import "../src/ChatChampion.sol"; // Adjust the path to where your ChatChampion contract is located
+import "../src/ChatChampion.sol";
 
 contract ChatChampionTest is Test {
-    ChatChampion private chatChampion;
-    address private owner;
-    address[] private airdropRecipients;
+    ChatChampion chatChampion;
+    address[] initialAddresses;
 
     function setUp() public {
-        // Set up the owner and recipient addresses
-        owner = address(this); // In tests, 'this' is the deploying address
-        airdropRecipients = new address[](30);
-        for (uint256 i = 0; i < 30; i++) {
-            airdropRecipients[i] = vm.addr(i + 1);
-        }
-
+        // Prepare a list of initial addresses
+        initialAddresses = new address[](2);
+        initialAddresses[0] = address(0x1);
+        initialAddresses[1] = address(0x2);
         // Deploy the ChatChampion contract
-        chatChampion = new ChatChampion(owner, airdropRecipients);
+        chatChampion = new ChatChampion(address(this), initialAddresses);
     }
 
     function testInitialMint() public {
-        // Test initial state
-        assertEq(chatChampion.balanceOf(owner), 0);
-        for (uint i = 0; i < airdropRecipients.length; i++) {
-            assertEq(chatChampion.balanceOf(airdropRecipients[i]), 1000 ether, "Airdrop amount incorrect for recipient");
+        // Each initial address should have 1000 CC tokens
+        for (uint256 i = 0; i < initialAddresses.length; i++) {
+            assertEq(chatChampion.balanceOf(initialAddresses[i]), 1000 ether);
         }
     }
 
-    function testCannotAirDropAfterEnded() public {
+    function testCannotAirDropAfterEnd() public {
         // End the airdrop
         chatChampion.endAirDrop();
-
-        // Attempting to airdrop after ending should fail
+        // Attempting another airdrop should fail
         vm.expectRevert();
-        chatChampion.airDrop(address(4));
+        chatChampion.airDrop(address(0x3));
     }
 
     function testRewardDistribution() public {
-        // Define an array of users and an array of scores
-        address[] memory users = new address[](3);
-        uint256[] memory scores = new uint256[](3);
-
+        address[] memory users = new address[](2);
         users[0] = address(0x1);
-        scores[0] = 10;
         users[1] = address(0x2);
-        scores[1] = 20;
-        users[2] = address(0x3);
-        scores[2] = 30;
+        uint256[] memory scores = new uint256[](2);
+        scores[0] = 50;
+        scores[1] = 150;
 
         // Simulate time passing
-        uint256 hoursPassed = 1;
-        vm.warp(block.timestamp + (hoursPassed * 1 hours));
+        vm.warp(block.timestamp + 2 hours);
 
-        // Execute the reward function
+        // Reward the users
         chatChampion.rewardUsers(users, scores);
 
-        // Calculate total score and total reward
-        uint256 totalScore = scores[0] + scores[1] + scores[2];
-        uint256 totalReward = hoursPassed * 1000 ether;
+        // Calculate expected rewards
+        uint256 totalReward = 2000 ether; // 2 hours * 1000 CC per hour
+        uint256 totalScore = 200;
+        uint256 rewardPerScore = totalReward / totalScore;
+        uint256 expectedRewardUser1 = rewardPerScore * 50;
+        uint256 expectedRewardUser2 = rewardPerScore * 150;
 
-        // Calculate and assert expected rewards for each user
-        for (uint i = 0; i < users.length; i++) {
-            uint256 expectedReward = (scores[i] * totalReward / totalScore);
-            assertEq(chatChampion.balanceOf(users[i]), expectedReward);
-            emit log_uint(chatChampion.balanceOf(users[i]));
-        }
+        // Check if the rewards were distributed correctly
+        assertEq(chatChampion.balanceOf(users[0]), 1000 ether + expectedRewardUser1);
+        assertEq(chatChampion.balanceOf(users[1]), 1000 ether + expectedRewardUser2);
     }
+
+    function testFailRewardWithNoScores() public {
+        address[] memory users = new address[](1);
+        users[0] = address(0x1);
+        uint256[] memory scores = new uint256[](1);
+        scores[0] = 0;
+
+        // Attempting to reward with a total score of 0 should fail
+        chatChampion.rewardUsers(users, scores);
+    }
+
+    // Additional tests can be written to cover all possible scenarios and edge cases
 }

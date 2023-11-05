@@ -27,7 +27,8 @@ contract ChatChampion is ERC20, Ownable {
         require(users.length == scores.length, "Users and scores length mismatch");
 
         // Calculate the total reward based on the time elapsed since the last reward
-        uint256 reward = (block.timestamp - lastRewardTime) / 1 hours * 1000 ether;
+        //uint256 reward = (block.timestamp - lastRewardTime) * (1000 ether / 1 hours);
+        uint256 reward = (block.timestamp - lastRewardTime) * 2.777777777777778e17;
         lastRewardTime = block.timestamp;
 
         // Calculate the total score
@@ -39,10 +40,14 @@ contract ChatChampion is ERC20, Ownable {
         // Require that the totalScore is greater than 0 to prevent division by zero
         require(totalScore > 0, "Total score must be greater than 0");
 
+        // Calculate the reward ratio once
+        uint256 rewardPerScore = reward / totalScore;
+
         // Distribute rewards based on each user's score
         for (uint256 i = 0; i < users.length; i++) {
             if (scores[i] > 0) {
-                _mint(users[i], (scores[i] * reward) / totalScore);
+                uint256 userReward = scores[i] * rewardPerScore;
+                _mint(users[i], userReward);
             }
         }
     }

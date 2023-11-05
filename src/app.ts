@@ -60,26 +60,28 @@ app.post(URI, async (req: Request, res: Response) => {
       const sentMessage = chunk.message.text;
       console.log("chatId", chatId);
       console.log(chunk);
-      // ChatCache.addUpdate(chatId, req.body);
       await saveMessage(req.body);
     
       const regexRedeem = /^\/redeem\s+(\S+)/;
       const matchForRedeem = sentMessage.match(regexRedeem);
   
-
+      console.log(sentMessage);
   
       //analyze the chat
        if (sentMessage === "/analyze") {
         const updates = await getFormatedMessages();
         await sendMessage(chatId, "Analysing the chat now ...");
         const chatResult = await analyzeChat(updates);
-        if (chatResult.users.length < 1) {
+        console.log(chatResult.users.length);
+        if (chatResult.users.length == 0) {
           sendMessage(chatId, "I made a mistake in my JSON file and could not reward any users.");
+        } else {
+          //await sendMessage(chatId, chatResult.analysis + "\n" + chatResult.users.join("\n"));
+          const rewardReceipt = await reward(chatResult);
+          await sendMessage(chatId, chatResult.analysis + "\n" + rewardReceipt);
+          //ChatCache.resetChat(chatId);
         }
-        //await sendMessage(chatId, chatResult.analysis + "\n" + chatResult.users.join("\n"));
-        const rewardReceipt = await reward(chatResult);
-        await sendMessage(chatId, chatResult.analysis + "\n" + rewardReceipt);
-        //ChatCache.resetChat(chatId);
+
       }
   
       if (sentMessage === "/start") {
