@@ -3,6 +3,7 @@ import {getWalletCollection} from "../client/mongo-connnect";
 import { connect } from "http2";
 import { connectToMongo } from "../client/mongo-connnect";
 import { get } from "http";
+import { all } from "axios";
 
 class UserWallet {
     private walletAddress: string;
@@ -124,7 +125,8 @@ async function deleteWallet(userId) {
 
 async function getWalletByUserId(userId: string) : Promise<UserWallet>{
     try {
-        const result = await getWalletCollection().findOne({ userId: userId });
+        const allWallets = await getWalletCollection().find({}).toArray();
+        const result = allWallets.find((wallet) => wallet.userId.toString() === userId);
         if (!result) {
             console.error("No user with the userId " + userId + " in the database.");
         }

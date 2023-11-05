@@ -64,7 +64,7 @@ app.post(URI, async (req: Request, res: Response) => {
       const sentMessage = chunk.message.text || "";
       console.log("chatId", chatId);
       console.log(chunk);
-      await saveMessage(req.body);
+      let isCommand = false;
     
       const regexRedeem = /^\/redeem\s+(\S+)/;
       const matchForRedeem = sentMessage.match(regexRedeem);
@@ -88,8 +88,9 @@ app.post(URI, async (req: Request, res: Response) => {
           //await sendMessage(chatId, chatResult.analysis + "\n" + chatResult.users.join("\n"));
           const rewardReceipt = await reward(chatResult);
           await sendMessage(chatId, chatResult.analysis + "\n" + rewardReceipt);
-          //ChatCache.resetChat(chatId);
+          await deleteAllMessages();
         }
+        isCommand = true;
 
       }
   
@@ -116,6 +117,11 @@ app.post(URI, async (req: Request, res: Response) => {
               Join now and DM our admins to get EXCLUSIVE ACCESS and WIN CHAMP Tokens!💬🏆`;
   
         await sendMessage(chatId, welcomeMsg);
+        isCommand = true;
+      }
+
+      if (!isCommand){
+          await saveMessage(req.body);
       }
   
       // Send the response after the asynchronous operation is complete
