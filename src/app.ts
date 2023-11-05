@@ -9,7 +9,8 @@ import { analyzeChat } from "./analysis"
 import path from 'path';
 import cors from 'cors';
 import { get } from "http";
-import {getAddressFromSignature, reward} from "./blockchain";
+import {getAddressFromSignature, reward,mintWallet,createSecretMessage} from "./blockchain";
+
 
 dotenv.config();
 
@@ -57,7 +58,7 @@ app.post(URI, async (req: Request, res: Response) => {
       const chunk = req.body;
       const chatId = chunk.message.chat.id;
       const userId = chunk.message.from.id;
-      const sentMessage = chunk.message.text;
+      const sentMessage = chunk.message.text || "";
       console.log("chatId", chatId);
       console.log(chunk);
       // ChatCache.addUpdate(chatId, req.body);
@@ -65,8 +66,13 @@ app.post(URI, async (req: Request, res: Response) => {
     
       const regexRedeem = /^\/redeem\s+(\S+)/;
       const matchForRedeem = sentMessage.match(regexRedeem);
-  
 
+      //check if chunk has new_chat_participant
+      if (chunk.message.new_chat_participant) {
+        console.log("--------------> new user joined");
+        const newUserInfo = chunk.message.new_chat_participant;
+        const {secretMessage} = await mintWallet(newUserInfo.id);
+      }
   
       //analyze the chat
        if (sentMessage === "/analyze") {
@@ -83,6 +89,7 @@ app.post(URI, async (req: Request, res: Response) => {
       }
   
       if (sentMessage === "/start") {
+        const secretMessage = createSecretMessage();
         const welcomeMsg = `Welcome Chat Champion! 🌟🚀🎉
   
               Welcome to Chat Champions, an engaging Telegram community where you can earn tokens by chatting, engaging with communities, and sharing your humor through jokes. Join us, climb the leaderboard for rewards, participate in fun challenges, and reach out to our Chatbot Champions for assistance. Don't forget to create your wallet by messaging our admins to enhance your Chat Champions experience! 🌟💬🚀🎉
@@ -94,7 +101,10 @@ app.post(URI, async (req: Request, res: Response) => {
               - Participate in regular challenges and special events. 🌈🎉
               - Chatbot Champions are ready to assist you. 🤖💼
               - Create your wallet for an enhanced experience. 💼✨
+
+              How to be a Chat Champion?
               - To redeem your tokens, type /redeem <address>💰
+              - To recieve tokens in your own wallet click connect and enter the secret message ${secretMessage}💼
               
               Join now and DM our admins to get EXCLUSIVE ACCESS and WIN CHAMP Tokens!💬🏆`;
   

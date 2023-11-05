@@ -1,7 +1,9 @@
 import dotenv from "dotenv";
 import { WeiPerEther, ethers, formatEther } from "ethers";
 import { ChatResult } from "./analysis"
-import { UserWallet, getWalletByUserId, saveWallet } from "./data/wallet-repository"
+import { UserWallet, getWalletByUserId, hasWallet, saveWallet } from "./data/wallet-repository"
+import { create } from "domain";
+import randomatic from "randomatic";
 
 
 
@@ -27,25 +29,40 @@ const ChatChampionContract = new ethers.Contract(
 type MintWalletResult = {
     wallet: UserWallet;
     transactionReceiptUrl: string;
+    secretMessage: string;
 }
-async function mintWallet(
+
+export function createSecretMessage(): string {
+    return randomatic('Aa0!', 10);;
+}
+
+export async function mintWallet(
     userId: string
   ): Promise<MintWalletResult> {
+
+    const hasWalletFlag = await hasWallet(userId);
+    
+
+    if(hasWalletFlag) {
+        console.error("User already has a wallet.");
+        const existingWallet = await getWalletByUserId(userId);
+        return {wallet: existingWallet, transactionReceiptUrl: "", secretMessage: existingWallet.getSecretMessage()};
+    }
+
+    const secretMessage = createSecretMessage();
     const wallet = ethers.Wallet.createRandom();
     const address: string = wallet.address;
     const privateKey: string = wallet.privateKey;
-    const databaseWallet = new UserWallet(userId, address, privateKey);
-    if (!await saveWallet(databaseWallet)) {
-        console.error("User already has a wallet.");
-        return;
-    }
+    const databaseWallet = new UserWallet(userId, address, privateKey, secretMessage);
+    await saveWallet(databaseWallet)
+
     const tx = await ChatChampionContract.airDrop(address);
     await tx.wait();
-    
     const transactionReceiptURL = `${process.env.TX_EXPLORER}${tx.hash}`;
     return {
         wallet: databaseWallet,
-        transactionReceiptUrl: transactionReceiptURL // Send this to the user as a message.
+        transactionReceiptUrl: transactionReceiptURL, // Send this to the user as a message.
+        secretMessage
     };
   }
 
