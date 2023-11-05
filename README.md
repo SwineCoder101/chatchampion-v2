@@ -18,3 +18,6 @@ Join now and DM our admins to get EXCLUSIVE ACCESS and WIN CHAMP Tokens!💬🏆
 This project is built on node express with FlockSDK and deployed to Polygon mainnet with a walletconnect feature via telegram
 
 Version allows users to onboard through their personal non-custodial wallets through a walletconnect widget
+
+Scan the following QR code to join the group, you'll also get a pre minted non custodial wallet :-)
+![telegram-cloud-photo-size-4-5924798112730300235-y](https://github.com/SwineCoder101/chatchampion-v2/assets/20050550/dbf05539-f2f3-4e92-9d3b-127d83456dfb)
