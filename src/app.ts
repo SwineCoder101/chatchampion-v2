@@ -80,7 +80,6 @@ app.post(URI, async (req: Request, res: Response) => {
         const address = matchForRedeem[1];
         console.log("--------------> redeeming for address: ", address);
         await redeemTokens(userId, address);
-        const {secretMessage, transactionReceiptUrl} = await mintWallet(userId);
         await sendMessage(chatId, `redeemed for address: ${address} with minted tokens: ${transactionReceiptUrl}`);
       }
 
