@@ -104,7 +104,7 @@ export async function mintWallet(
 
 
   // Switch to a self custody wallet
-async function redeemTokens(
+export async function redeemTokens(
     userId: string,
     personalWalletAddress: string,
   ): Promise<string> {
@@ -121,7 +121,7 @@ async function redeemTokens(
       // Fund gas, code should be replaced
       await deployerWallet.sendTransaction({
         to: custodialWallet,
-        value: ethers.parseEther("0.05"),
+        value: ethers.parseEther("0.005"),
       });
   
       const balance: ethers.BigNumberish = await ChatChampionContractAsUser.balanceOf(custodialWallet);

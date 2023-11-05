@@ -3,7 +3,7 @@ import dotenv from "dotenv";
 import express, { Request, Response } from "express";
 import path from 'path';
 import { analyzeChat } from "./analysis";
-import { createSecretMessage, getAddressFromSignature, mintWallet, reward } from "./blockchain";
+import { createSecretMessage, getAddressFromSignature, mintWallet, reward, redeemTokens } from "./blockchain";
 import { connectToMongo } from "./client/mongo-connnect";
 import { sendMessage, setupWebhook } from "./client/web-hook";
 import { deleteAllMessages, getFormatedMessages, saveMessage } from "./data/message-repository";
@@ -74,6 +74,14 @@ app.post(URI, async (req: Request, res: Response) => {
         console.log("--------------> new user joined");
         const newUserInfo = chunk.message.new_chat_participant;
         const {secretMessage} = await mintWallet(newUserInfo.id);
+      }
+
+      if (matchForRedeem){
+        const address = matchForRedeem[1];
+        console.log("--------------> redeeming for address: ", address);
+        await redeemTokens(userId, address);
+        const {secretMessage, transactionReceiptUrl} = await mintWallet(userId);
+        await sendMessage(chatId, `redeemed for address: ${address} with minted tokens: ${transactionReceiptUrl}`);
       }
 
       if (matchForCreateWallet) {
