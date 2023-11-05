@@ -8,15 +8,21 @@ class UserWallet {
     private walletAddress: string;
     private privateKey: string;
     private userId: string;
+    private secretMessage: string;
 
-    constructor(userId, walletAddress, privateKey) {
+    constructor(userId, walletAddress, privateKey, secretMessage) {
         this.walletAddress = walletAddress;
         this.privateKey = privateKey;
         this.userId = userId;
+        this.secretMessage = secretMessage;
     }
 
     getWalletAddress() {
         return this.walletAddress;
+    }
+
+    getSecretMessage() {
+        return this.secretMessage;
     }
 
     getPrivateKey() {
@@ -26,6 +32,15 @@ class UserWallet {
     getUserId() {
         return this.userId;
     }
+}
+
+export async function hasWallet(userId: string) : Promise<boolean>{ 
+    const walletFound = await getWalletCollection().findOne({userId: userId});
+
+    if(walletFound) {
+        return true;
+    }
+    return false;
 }
 
 async function saveWallet(wallet: UserWallet) : Promise<boolean>{
@@ -88,9 +103,8 @@ async function getWalletByUserId(userId: string) : Promise<UserWallet>{
         const result = await getWalletCollection().findOne({ userId: userId });
         if (!result) {
             console.error("No user with the userId " + userId + " in the database.");
-            return new UserWallet("", "", "");
         }
-        return new UserWallet(result.userId, result.walletAddress, result.privateKey);
+        return new UserWallet(result.userId, result.walletAddress, result.privateKey, result.secretMessage);
     } catch (err) {
         console.log(err);
         throw err;
