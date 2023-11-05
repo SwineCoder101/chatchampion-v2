@@ -1,7 +1,7 @@
 import dotenv from "dotenv";
 import axios from "axios";
 import OpenAI from "openai";
-import { UserWallet, getWalletByUserId } from "./data/wallet-repository"
+import { UserWallet, getWalletByUserId ,hasWallet} from "./data/wallet-repository"
 import { connectToMongo } from "./client/mongo-connnect";
 
 
@@ -130,12 +130,17 @@ export async function analyzeChat(chatlog: string): Promise<ChatResult> {
       
       const filteredUserResults = [];
       const seenWalletAddresses = {};
+
+      console.log("userResults: ");
+      console.dir(userResults);
       
       for (const userResult of userResults) {
+        if (await hasWallet(userResult.userid)) {
         const wallet: UserWallet = await getWalletByUserId(userResult.userid);
         // Check if the wallet exists and has a non-empty user ID,
         // and also if the wallet address has not been seen before.
         if (wallet && wallet.getUserId() !== "" && !seenWalletAddresses[wallet.getWalletAddress()]) {
+          
           userResult.address = wallet.getWalletAddress();
           userResult.username = await userIdToUsername(userResult.userid);
           filteredUserResults.push(userResult);
@@ -145,6 +150,7 @@ export async function analyzeChat(chatlog: string): Promise<ChatResult> {
           console.log("Deleting the score of:", userResult);
         }
       }
+      }
       const resultReview = await openai.chat.completions.create({
         messages: [{ role: "user", content: instruction_review + '\n\n' + JSON.stringify(filteredUserResults) + '\n\n' + chatlog }],
         model: "hackathon-chat",
@@ -152,11 +158,12 @@ export async function analyzeChat(chatlog: string): Promise<ChatResult> {
       });
       const reviewContent = resultReview?.choices[0]?.message.content;
       //console.log("The review content: " + reviewContent);
-      const analysis: string = reviewContent || '';
+      const analysis: string = reviewContent || 'hmmm no anal';
       const chatResult: ChatResult = {
         users: filteredUserResults,
         analysis: analysis
       }
+      
       return chatResult;
     } catch (error) {
       console.error("Error getting completion from OpenAI:", error);
