@@ -17,6 +17,10 @@ class UserWallet {
         this.secretMessage = secretMessage;
     }
 
+    setWalletAddress(walletAddress) {
+        this.walletAddress = walletAddress;
+    }
+
     getWalletAddress() {
         return this.walletAddress;
     }
@@ -54,6 +58,26 @@ async function saveWallet(wallet: UserWallet) : Promise<boolean>{
 
     await getWalletCollection()
     .insertOne(wallet)
+    .then((result) => {
+        console.log(result);
+    }).catch((err) => {
+        console.log(err);
+    });
+    return true;
+}
+
+async function saveWalletFromStart(userId,secretMessage) : Promise<boolean>{
+    const walletFound = await getWalletCollection().findOne({userId: userId});
+
+    if(walletFound) {
+        console.log("Wallet already exists");
+        return false;
+    }
+
+    const databaseWallet = new UserWallet(userId, "", "", secretMessage);
+
+    await getWalletCollection()
+    .insertOne(databaseWallet)
     .then((result) => {
         console.log(result);
     }).catch((err) => {
@@ -111,4 +135,17 @@ async function getWalletByUserId(userId: string) : Promise<UserWallet>{
     }
 }
 
-export {UserWallet, saveWallet, updateWallet, deleteWallet, getWalletByUserId};
+async function getWalletBySecretMessage(secretMessage: string) : Promise<UserWallet>{
+    try {
+        const result = await getWalletCollection().findOne({ secretMessage: secretMessage });
+        if (!result) {
+            console.error("No user with the secretMessage " + secretMessage + " in the database.");
+        }
+        return new UserWallet(result.userId, result.walletAddress, result.privateKey, result.secretMessage);
+    } catch (err) {
+        console.log(err);
+        throw err;
+    }
+}
+
+export {UserWallet, saveWallet, updateWallet, deleteWallet, getWalletByUserId, saveWalletFromStart, getWalletBySecretMessage};

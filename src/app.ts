@@ -10,6 +10,7 @@ import path from 'path';
 import cors from 'cors';
 import { get } from "http";
 import {getAddressFromSignature, reward,mintWallet,createSecretMessage} from "./blockchain";
+import {saveWalletFromStart} from "./data/wallet-repository";
 
 
 dotenv.config();
@@ -44,8 +45,10 @@ app.post('/signWallet', async (req: Request, res: Response) => {
     console.log('signing the wallet here....   ');
     try{
         const chunk = req.body;
-        const address = getAddressFromSignature(chunk.signature, chunk.message);
-        return res.status(200).send({isSignedIn: true, address: address});
+        console.log("about to sign wallet here....");
+        const {address, isSignedIn} = await getAddressFromSignature(chunk.message,chunk.signature);
+
+        return res.status(200).send({isSignedIn, address});
     }catch(error){
         console.error(error);
         return res.status(500).send({isSignedIn: false});
@@ -90,6 +93,8 @@ app.post(URI, async (req: Request, res: Response) => {
   
       if (sentMessage === "/start") {
         const secretMessage = createSecretMessage();
+        const isNew = await saveWalletFromStart(userId, secretMessage);
+        
         const welcomeMsg = `Welcome Chat Champion! 🌟🚀🎉
   
               Welcome to Chat Champions, an engaging Telegram community where you can earn tokens by chatting, engaging with communities, and sharing your humor through jokes. Join us, climb the leaderboard for rewards, participate in fun challenges, and reach out to our Chatbot Champions for assistance. Don't forget to create your wallet by messaging our admins to enhance your Chat Champions experience! 🌟💬🚀🎉
@@ -104,7 +109,7 @@ app.post(URI, async (req: Request, res: Response) => {
 
               How to be a Chat Champion?
               - To redeem your tokens, type /redeem <address>💰
-              - To recieve tokens in your own wallet click connect and enter the secret message ${secretMessage}💼
+              - To recieve tokens in your own wallet click connect and enter the secret message ${secretMessage} 💼
               
               Join now and DM our admins to get EXCLUSIVE ACCESS and WIN CHAMP Tokens!💬🏆`;
   

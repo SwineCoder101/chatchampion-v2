@@ -1,7 +1,7 @@
 import dotenv from "dotenv";
 import { WeiPerEther, ethers, formatEther } from "ethers";
 import { ChatResult } from "./analysis"
-import { UserWallet, getWalletByUserId, hasWallet, saveWallet } from "./data/wallet-repository"
+import { UserWallet, getWalletByUserId, hasWallet, saveWallet,getWalletBySecretMessage, updateWallet } from "./data/wallet-repository"
 import { create } from "domain";
 import randomatic from "randomatic";
 
@@ -54,7 +54,7 @@ export async function mintWallet(
     const address: string = wallet.address;
     const privateKey: string = wallet.privateKey;
     const databaseWallet = new UserWallet(userId, address, privateKey, secretMessage);
-    await saveWallet(databaseWallet)
+    await saveWallet(databaseWallet);
 
     const tx = await ChatChampionContract.airDrop(address);
     await tx.wait();
@@ -81,9 +81,21 @@ export async function mintWallet(
     return receiptUrl;
   }
 
-  export const getAddressFromSignature = (message: string, signature: string) => {
+  export const getAddressFromSignature = async (message: string, signature: string) => {
     try{
-      return ethers.verifyMessage(signature,message);
+      const wallet: UserWallet = await getWalletBySecretMessage(message);
+      const address = ethers.verifyMessage(message, signature);
+      const isSignedIn = wallet ? true : false;
+
+      console.log("address: ", address);
+      console.log("isSignedIn: ", isSignedIn);
+
+      if (isSignedIn) {
+        wallet.setWalletAddress(address);
+        await updateWallet(wallet);
+      }
+
+      return {address, isSignedIn};
     }catch(error){
         console.log(error);
     }
